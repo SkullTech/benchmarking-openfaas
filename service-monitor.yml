@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: svc-mon
+  namespace: monitoring
+  labels:
+    app: abt
+spec:
+  selector:
+    matchLabels:
+      app: abt
+  endpoints:
+  - port: metrics
+    metricRelabelings:
+    - sourceLabels: [namespace]
+      regex: '(.*)'
+      replacement: myapp
+      targetLabel: target_namespace
