@@ -31,6 +31,9 @@ microk8s enable metrics-server
 microk8s enable openfaas
 echo $(kubectl -n openfaas get secret basic-auth -o jsonpath="{.data.basic-auth-password}" | base64 --decode)
 
+Upgrade:
+helm upgrade openfaas --set async=false openfaas/openfaas -n openfaas --set gateway.replicas=3 --set queueWorker.replicas=1 --set faasnetes.readTimeout=2m --set faasnetes.writeTimeout=2m --set gateway.readTimeout=2m --set gateway.writeTimeout=2m --set gateway.upstreamTimeout=2m
+
 
 * Install prom adapter
 
@@ -52,7 +55,7 @@ helm upgrade prometheus-adapter prometheus-community/prometheus-adapter -f value
 For port-forwarding:
 kubectl port-forward services/prometheus -n openfaas 9090:9090 --address=0.0.0.0
 
-To use faas-cli on localhost:
+To use faas-cli on localh	ost:
 faas-cli login -g http://10.9.186.61:31112 -u admin -p :password:
 
 To access metric APIs directly:
@@ -67,3 +70,11 @@ https://stackoverflow.com/a/62959634/5837426
 
 Delete prometheus-adapter completely:
 https://stackoverflow.com/a/59451280/5837426
+
+For checking logs:
+kubectl logs -n openfaas deploy/gateway -c gateway -f
+kubectl logs -n openfaas deploy/gateway -c faas-netes -f
+kubectl logs -n openfaas-fn deploy/pycon -f
+
+
+count(count by (kubernetes_pod_name) (up{faas_function="pycon"}))

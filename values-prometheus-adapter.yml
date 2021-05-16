@@ -19,7 +19,7 @@ rules:
       name:
         matches: "^(.*)_total"
         as: "${1}_per_second"
-      metricsQuery: 'sum(rate(<<.Series>>{<<.LabelMatchers>>}[1m])) by (<<.GroupBy>>)'
+      metricsQuery: 'sum(rate(<<.Series>>{<<.LabelMatchers>>}[15s])) by (<<.GroupBy>>)'
 
   external:
     - seriesQuery: 'gateway_function_invocation_started{kubernetes_namespace!="",kubernetes_pod_name!=""}'
@@ -28,4 +28,4 @@ rules:
       name:
         matches: "^(.*)_started"
         as: "${1}_per_second"
-      metricsQuery: 'sum(rate(<<.Series>>{<<.LabelMatchers>>}[1m])) by (<<.GroupBy>>)'
+      metricsQuery: 'sum(rate(<<.Series>>{<<.LabelMatchers>>}[15s])) by (<<.GroupBy>>)'

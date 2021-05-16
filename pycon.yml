@@ -1,7 +1,7 @@
 version: 1.0
 provider:
   name: openfaas
-  gateway: 10.89.186.61:31112
+  gateway: 10.89.186.87:31112
 functions:
   pycon:
     lang: python3
@@ -12,7 +12,11 @@ functions:
     annotations:
       prometheus.io.scrape: true
       prometheus.io.port: 8081
-    requests:
-      cpu: 200m
-    limits:
-      cpu: 1
+    environment:
+      read_timeout: 2m
+      write_timeout: 2m
+      exec_timeout: 2m
+    # requests:
+    #   cpu: 100m
+    # limits:
+    #   cpu: 1
