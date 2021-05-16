@@ -1,0 +1,31 @@
+First we considered the default AlertManager and Autoscaler of OpenFaaS, which uses ... But it's very crude, and [cite] has demonstrated that this doesn't work well.
+
+Openfaas also supports using the Kubernets HPA for scaling, so we went with that. Then we ran scaling by the CPU usage resource metric which is what kubernetes supports by default, and that didn't work very well. And it's understandable because [...]
+So we understood that the default autoscaler of kubernetes for OpenFaas.
+
+Reasoning for gateway_function_invocation_per_second: We want the number of replicas to scale according to the number of requests coming in to the OpenFaas gateway. Unlike traditional services e.g. Apache web-server which can run serve many requests concurrently, the pods associated with FaaS functions can run only one function invocation at a time. So the only practical way of scaling FaaS pods would be to scale them according to the number of concurrent requests at any given moment. OpenFaaS exposes metrics through which we can get the number of function invocations the OpenFaaS gateway receieves every second, so we went with scaling according to that.
+
+
+Plots:
+
+The first workload we tried was a gradual linear increase of load which increases the rate of incoming requests per second from 0 to 1 in 4 minutes. 
+
+General Behavior of the Openfaas System under gradual scaling up and then down:
+
+Latency: 
+
+As expected, the requestResponseLatency went up drastically while scaling up. But surprisingly, schedulingLatency didn't flucuate much at all, it was executionLatency which contributed to this fluctuation in the overall latency. 
+
+The only reason executionLatency can go up is because the pods associated with the requests didn't have enough computing resource e.g. CPU and memory. From this, we can gather that OpenFaaS along with Kubernetes is very good at scheduling, but it's resource allocation is where the developer has to pay special attention because that's where most of the inefficiencies come from.
+
+Pod Replicas, Container Per Host, Node CPU Usage, Node Memory Usage:
+
+First of all, as we can see from plot 2, 3, and 4, the control plane uses more resources (cpu and memory) than the other nodes. So it's absolute essential one uses a larger node to use as control plane compared to the smaller worker nodes.
+
+Now when it comes to load balancing between the nodes, it appears that Kubernetes is not very efficient. From the replica plot we can see HPA is very efficient at maintaing the scaling criteria and scaling up the number of pods up and down accordingly. But how the pods do not get uniformly distributed among the nodes. This is also the possible cause behind suboptimal resource allocation to the pods themselves, as overcrowding at a particular node by too many pods would leave little resource to each pods in there.
+
+So, again, resource allocation is something that Kubernetes does not do very well automatically, the developer needs to look into this because this affects the overall performance of the OpenFaaS platform.
+
+
+Comparison between different workloads:
+
