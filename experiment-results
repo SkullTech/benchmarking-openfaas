@@ -27,5 +27,24 @@ Now when it comes to load balancing between the nodes, it appears that Kubernete
 So, again, resource allocation is something that Kubernetes does not do very well automatically, the developer needs to look into this because this affects the overall performance of the OpenFaaS platform.
 
 
-Comparison between different workloads:
+Comparison between different workloads::
 
+result-burst-30s-0.1, result-burst-30s-2waves-cold-0.1, result-burst-30s-2waves-hot-0.1
+
+Latency plots:
+
+We can see that the system handles a much faster spike of traffic, i.e. 0 to 1 requests per second in 30 seconds pretty well, the response of the system is almost similar to the gradual scaling up scenario. There is however a slight discrepency in one of the plots, we can see that in the latency plot of result-burst-30s-2waves-cold-0.1 the spike in latency at the scaling up stage is much higher than the other scenarios. This irregular behavior was probably caused because this was the initial test after booting up the system, and that way the system under test might have been different for this and the subsequent tests. One way this difference can occur is that the first time a pod is run on a node, the node pulls the docker image from the registry, which is an expensive task. For subsequent runs of the pod on the same node the docker image already exists in the local filesystem of that node. This might be the reason this irregular behavior of system is being observed, this needs further investigation.
+
+
+Now comparing the scenarios with 2 waves of requests, i.e. the "cold" one having a longer interval between the 2 waves, and the "hot" one having a shorter interval between the 2 waves, there is a difference in how the system handles the the 2nd wave for these scenarios. For the hot one, the spike in latency for the 2nd wave of scaling up is much shorter compared to the cold one.
+
+This phenomenon can be explained through the concept of cold start and warm starts. For the "hot" scenario, at the time the 2nd wave comes the autoscaler didn't yet scale down, so there were multiple pod replicas running in warm mode, i.e. running but not serving any requests. So when the 2nd wave of request comes the autoscaler doesn't need to create pods to accomodate them, it can use the existing warm pods directly.
+
+Whereas for the cold case, due to there being a larger time interval between the 2 waves the autoscaler scales down to 1 replica by the time the 2nd wave comes. So in order to accomodate that load it needed to create new replicas, and that added to the spike in latency.
+
+From this, we recommend that the developer keeps in mind the expected pattern of request load. If it comes in bursts with shorter interval between the bursts, the HPA cooldown period should be adjusted to accomodate for that, so that it doesn't scale down too quicly and lose out on the opportunity to use warm pods for the subsequent bursts. But if the interval between the bursts is comparatively long, there's no point in not scaling down, because by scaling down we could save CPU and memory usage, which was the purpose of using FaaS in the first place. 
+
+
+Comparison between different scaling parameters: average function_invocation_per_second of 0.1 vs 0.2:
+
+For the same load, the HPA would create fewer pods for a scaling threshold of 0.2 than  
