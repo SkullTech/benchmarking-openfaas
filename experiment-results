@@ -47,4 +47,23 @@ From this, we recommend that the developer keeps in mind the expected pattern of
 
 Comparison between different scaling parameters: average function_invocation_per_second of 0.1 vs 0.2:
 
-For the same load, the HPA would create fewer pods for a scaling threshold of 0.2 than  
+For the same load, the HPA would create fewer pods for a scaling threshold of 0.2 than it would for 0.1. From the replicas graph we can see that at the peak load the HPA created almost half as many pods for the former than the latter.
+
+But this affects the system adversely. As we can see from the other graphs, the system behaves very irregularly, cpu and memory usage in few of the systems becomes very high and in turn those nodes become unresponsive, the latency of the requests vary wildly, many of the reqeusts fial with 500 code, etc. From this it's clear that OpenFaaS is much more stable when there are larger number of pods, each pod receiving requests slowly, than it is when there are fewer number of pods and requests are queuing up on those pods.
+
+From this, it can be recommended that the developer sets up the scaling parameter in such a way that there are more pods than fewer, so when it comes to the average gateway_function_invocation_per_second metric, the threshold should be on the lower side. The exact amount would depend on the average execution time of the function, for our case 0.1 was a good amount.
+
+A heuristic starting point for calculating the threshold could be the following: (1 / (average execution time of the function)). If Kubernetes was an ideal system which didn't have any other delay and unlimited resources, this should have been enough. But in practice, a value 1/5th of the above value or less works, that way we account for the various inefficiencies of Kubernets and scale pre-emptively.
+
+
+
+-----------------------------------
+
+Recommendations:
+
+1. Instead of the Kubernets defaults, use the gateway_function_invocation_per_second as the primary criteria for HPA autoscaling.
+2. Pay more attention to resource allocation than scheduling, that's where most of the inefficiencies come from.
+3. use a larger node to use as control plane compared to the smaller worker nodes.
+4. "Warm up" the nodes before using a system for production, i.e. run various test workloads so the nodes get used to the traffic, e.g. by pulling the required images.
+5. we recommend that the developer keeps in mind the expected pattern of request load. If it comes in bursts with shorter interval between the bursts, the HPA cooldown period should be adjusted to accomodate for that, so that it doesn't scale down too quicly and lose out on the opportunity to use warm pods for the subsequent bursts. But if the interval between the bursts is comparatively long, there's no point in not scaling down, because by scaling down we could save CPU and memory usage, which was the purpose of using FaaS in the first place.
+6. it can be recommended that the developer sets up the scaling parameter in such a way that there are more pods than fewer, so when it comes to the average gateway_function_invocation_per_second metric, the threshold should be on the lower side. The exact amount would depend on the average execution time of the function.					A heuristic starting point for calculating the threshold could be the following: (1 / (average execution time of the function)). If Kubernetes was an ideal system which didn't have any other delay and unlimited resources, this should have been enough. But in practice, a value 1/5th of the above value or less works, that way we account for the various inefficiencies of Kubernets and scale pre-emptively.
