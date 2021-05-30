@@ -46,7 +46,7 @@ async function afterResponse(requestParams, response, context, ee, next) {
         let promResponse = await axios.get(
             "http://10.89.186.87:9090/api/v1/query", {
                 params: {
-                    query: 'count(count by (kubernetes_pod_name) (up{faas_function="pycon"}))'
+                    query: 'count(count by (kubernetes_pod_name) (up{faas_function="primality"}))'
                 }
             }
         );

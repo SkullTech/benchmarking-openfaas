@@ -50,6 +50,6 @@ config:
 scenarios:
   - flow:
       - get:
-          url: "/function/pycon"
+          url: "/function/primality"
           beforeRequest: "beforeRequest"
           afterResponse: "afterResponse"
