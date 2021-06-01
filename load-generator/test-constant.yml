@@ -1,0 +1,15 @@
+config:
+  http:
+    timeout: 120
+
+  phases:
+    - arrivalRate: 0.1
+      duration: 100
+
+  processor: "./metrics.js"
+scenarios:
+  - flow:
+      - get:
+          url: "/function/primality"
+          beforeRequest: "beforeRequest"
+          afterResponse: "afterResponse"

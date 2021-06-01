@@ -1,6 +1,8 @@
 import logging
 import subprocess
+import time
 from argparse import ArgumentParser
+from typing import Optional
 
 import coloredlogs
 
@@ -8,45 +10,82 @@ logger = logging.getLogger()
 coloredlogs.install(level="DEBUG", logger=logger)
 
 
-def create_cluster(size: str, count: int, dry: bool = False):
-    command = f"doctl kubernetes cluster create --1-clicks openfaas,metrics-server --count {count} --region blr1 --size {size} {size}-{count}"
+def run_command(command: str, capture_output: bool = False) -> Optional[str]:
+    logger.debug(f"Executing: {command}")
+    cp = subprocess.run(command, shell=True, capture_output=capture_output)
+    if capture_output:
+        return cp.stdout.decode("UTF-8")
+
+
+def create_cluster(size: str, count: int) -> None:
     logger.info(f"Creating cluster with {count} {size} nodes")
-    logger.debug(f"Executing: {command}")
-    if not dry:
-        subprocess.run(command, shell=True)
+    cluster_name = f"{size}-{count}"
+    run_command(
+        "doctl kubernetes cluster create --1-clicks openfaas,metrics-server "
+        f"--count {count} --region blr1 --size {size} {cluster_name}"
+    )
+    cluster_id = run_command(
+        f"doctl kubernetes cluster get {cluster_name} --format ID --no-header",
+        capture_output=True,
+    ).strip()
+    logger.info(f"Cluster created, name: {cluster_name}, ID: {cluster_id}")
+    time.sleep(10)
 
-    command = 'echo $(kubectl -n openfaas get secret basic-auth -o jsonpath="{.data.basic-auth-password}" | base64 --decode)'
-    logger.info("Fetching OpenFaaS password")
-    logger.debug(f"Executing: {command}")
-    if not dry:
-        passwd = subprocess.run(command, shell=True)
-        logger.info(f"OpenFaaS password is: {passwd}")
-
-    command = "helm install prometheus-adapter prometheus-community/prometheus-adapter -f kubernetes/values-prometheus-adapter.yml"
     logger.info(f"Installing prometheus-adapter on cluster")
-    logger.debug(f"Executing: {command}")
-    if not dry:
-        subprocess.run(command, shell=True)
+    run_command("helm repo update")
+    run_command(
+        "helm install prometheus-adapter prometheus-community/prometheus-adapter "
+        "-f kubernetes/prometheus-adapter-values.yml",
+    )
+
+    logger.info("Exposing Prometheus service of OpenFaaS")
+    run_command(
+        "kubectl expose service prometheus -n openfaas --port=9090 --target-port=9090 "
+        "--type=LoadBalancer --name=prometheus-external"
+    )
+    time.sleep(180)
+    while True:
+        output = run_command(
+            "kubectl get service prometheus-external -n openfaas --no-headers",
+            capture_output=True,
+        )
+        prometheus = f"http://{output.split()[3]}:9090"
+        if "pending" not in prometheus:
+            break
+        time.sleep(10)
+    logger.info(f"OpenFaaS Prometheus is available at: {prometheus}")
+
+    logger.info("Log into OpenFaaS CLI")
+    passwd = run_command(
+        "echo $(kubectl -n openfaas get secret basic-auth -o "
+        'jsonpath="{.data.basic-auth-password}" | base64 --decode)',
+        capture_output=True,
+    )
+    if passwd:
+        logger.info(f"OpenFaaS password is: {passwd}")
+    output = run_command(
+        "kubectl get services -n openfaas gateway-external --no-headers",
+        capture_output=True,
+    )
+    gateway = f"http://{output.split()[3]}:8080"
+    logger.info(f"OpenFaaS gateway is available at: {gateway}")
+    run_command(f"faas-cli login -g {gateway} -u admin -p {passwd}")
+
+    logger.info("Deploying function to OpenFaaS")
+    run_command(f"faas-cli deploy -f function/primality.yml --gateway {gateway}")
 
 
-def list_clusters(dry: bool = False):
-    command = f"doctl kubernetes cluster list --format ID,Name,Status"
-    logger.debug(f"Executing: {command}")
-    if not dry:
-        subprocess.run(command, shell=True)
+def list_clusters():
+    run_command("doctl kubernetes cluster list --format ID,Name,Status")
 
 
-def delete_cluster(cid: str, dry: bool = False):
-    command = f"doctl kubernetes cluster delete {cid} --dangerous"
+def delete_cluster(cid: str):
     logger.info(f"Deleting cluster {cid}")
-    logger.debug(f"Executing: {command}")
-    if not dry:
-        subprocess.run(command, shell=True)
+    run_command(f"doctl kubernetes cluster delete {cid} --dangerous")
 
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument("--dry", help="dry run", action="store_true")
     subparsers = parser.add_subparsers(help="actions")
     function_map = {
         "create": create_cluster,

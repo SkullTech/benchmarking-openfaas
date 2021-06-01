@@ -2,7 +2,7 @@ version: 1.0
 provider:
   name: openfaas
 functions:
-  pycon:
+  primality:
     lang: python3
     handler: ./primality
     image: skulltech/primality:latest

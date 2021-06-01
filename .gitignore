@@ -1,5 +1,5 @@
-build
+function/build
 venv
-load_generator/node_modules
+load-generator/node_modules
 .idea
 *.pyc

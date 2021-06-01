@@ -12,12 +12,17 @@ module.exports = {
     afterResponse: afterResponse
 };
 
+const kubeContext = process.env.KUBE_CONTEXT;
+const promServer = process.env.PROM_SERVER;
+const outputDir = process.env.OUTPUT_DIR;
+
 const csvStream = csv.format({headers: true});
-let writableStream = fs.createWriteStream(`result-${Date.now()}.csv`, {flags: 'a'});
+let writableStream = fs.createWriteStream(`${outputDir}/result-${Date.now()}.csv`, {flags: 'a'});
 csvStream.pipe(writableStream);
 
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
+kc.setCurrentContext(kubeContext);
 const opts = {};
 kc.applyToRequest(opts);
 const kubeServer = kc.getCurrentCluster().server;
@@ -44,14 +49,15 @@ async function afterResponse(requestParams, response, context, ee, next) {
 
     try {
         let promResponse = await axios.get(
-            "http://10.89.186.87:9090/api/v1/query", {
+            `${promServer}/api/v1/query`, {
                 params: {
-                    query: 'count(count by (kubernetes_pod_name) (up{faas_function="primality"}))'
+                    query: 'count(count by (kubernetes_pod_name) (up))'
                 }
             }
         );
         metrics.replicas = promResponse.data.data.result[0].value[1];
-    } catch (err) {}
+    } catch (err) {
+    }
 
     try {
         let nodeMetrics = JSON.parse(await request.get(`${kubeServer}/apis/metrics.k8s.io/v1beta1/nodes`, opts))
@@ -59,12 +65,14 @@ async function afterResponse(requestParams, response, context, ee, next) {
             metrics[`${item.metadata.name}CpuUsage`] = item.usage.cpu;
             metrics[`${item.metadata.name}MemoryUsage`] = item.usage.memory;
         }
-    } catch (err) {}
+    } catch (err) {
+    }
 
     try {
         let invocationMetrics = JSON.parse(await request.get(`${kubeServer}/apis/external.metrics.k8s.io/v1beta1/namespaces/openfaas-fn/gateway_function_invocation_per_second`, opts))
         metrics.functionInvocationRate = invocationMetrics.items[0].value;
-    } catch (err) {}
+    } catch (err) {
+    }
 
     if (response.statusCode < 300) {
         metrics.schedulingLatency = metrics["executionStartTime"] - metrics.requestTime;

@@ -1,5 +1,4 @@
 config:
-  target: 'http://10.89.186.87:31112'
   http:
     timeout: 120
 
