@@ -72,6 +72,7 @@ async function afterResponse(requestParams, response, context, ee, next) {
         let invocationMetrics = JSON.parse(await request.get(`${kubeServer}/apis/external.metrics.k8s.io/v1beta1/namespaces/openfaas-fn/gateway_function_invocation_per_second`, opts))
         metrics.functionInvocationRate = invocationMetrics.items[0].value;
     } catch (err) {
+        metrics.functionInvocationRate = null;
     }
 
     if (response.statusCode < 300) {

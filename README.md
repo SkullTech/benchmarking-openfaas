@@ -1,0 +1,4 @@
+- Install [`doctl`](https://github.com/digitalocean/doctl) and set it up.
+- Install [`kubectl`](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/).
+- Install [`faas-cli`](https://docs.openfaas.com/cli/install/).
+- Run the manage-cluster.py script.

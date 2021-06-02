@@ -101,6 +101,13 @@ def create_cluster(
     yaml.dump(hpa_config, Path("kubernetes/hpa-function-invocation-per-second.yml"))
     run_command(f"kubectl apply -f kubernetes/hpa-function-invocation-per-second.yml")
 
+    logger.info("SUT up and running.")
+    logger.info(
+        f"Run the following to benchmark: $ KUBE_CONTEXT=do-blr1-{cluster_name} "
+        f'PROM_SERVER={prometheus} OUTPUT_DIR="results" '
+        f"artillery run -t {gateway} load-generator/<test-definition>.yml"
+    )
+
 
 def list_clusters():
     run_command("doctl kubernetes cluster list --format ID,Name,Status")
@@ -130,14 +137,15 @@ def main():
         choices=["s-1vcpu-2gb", "s-2vcpu-2gb", "s-2vcpu-4gb", "s-4vcpu-8gb"],
     )
     create_cluster_parser.add_argument(
-        "min-replicas", type=int, help="minimum no. of replicas"
+        "min_replicas", type=int, metavar="min-replicas", help="minimum no. of replicas"
     )
     create_cluster_parser.add_argument(
-        "max-replicas", type=int, help="maximum no. of replicas"
+        "max_replicas", type=int, metavar="max-replicas", help="maximum no. of replicas"
     )
     create_cluster_parser.add_argument(
-        "target-fips",
+        "target_fips",
         type=float,
+        metavar="target-fips",
         help="target average function invocations per second",
     )
 
