@@ -48,7 +48,11 @@ def create_cluster(
     time.sleep(10)
 
     logging.info("Installing OpenFaaS on cluster")
-    run_command("arkade install openfaas --load-balancer")
+    run_command("arkade install openfaas --load-balancer --gateways 3 "
+                "--set gateway.directFunctions=false --set async=false "
+                "--set faasnetes.readTimeout=2m --set faasnetes.writeTimeout=2m "
+                "--set gateway.readTimeout=2m --set gateway.writeTimeout=2m "
+                "--set gateway.upstreamTimeout=2m")
     logging.info("Installing metrics-server on cluster")
     run_command("arkade install metrics-server")
 
@@ -84,7 +88,7 @@ def create_cluster(
     output = run_command(
         "kubectl get services -n openfaas gateway-external --no-headers",
         capture_output=True,
-        success_condition=lambda x: "pending" not in x,
+        success_condition=lambda x: "none" not in x,
     )
     gateway = f"http://{output.split()[3]}:8080"
     logger.info(f"OpenFaaS gateway is available at: {gateway}")

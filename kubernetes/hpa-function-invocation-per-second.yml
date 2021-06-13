@@ -8,8 +8,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: primality
-  minReplicas: 2
-  maxReplicas: 20
+  minReplicas: 1
+  maxReplicas: 50
   metrics:
   - type: External
     external:
@@ -17,4 +17,4 @@ spec:
         name: gateway_function_invocation_per_second
       target:
         type: AverageValue
-        averageValue: 0.3
+        averageValue: 0.1

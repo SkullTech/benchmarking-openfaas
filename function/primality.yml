@@ -11,3 +11,7 @@ functions:
     annotations:
       prometheus.io.scrape: true
       prometheus.io.port: 8081
+    environment:
+      read_timeout: 2m
+      write_timeout: 2m
+      exec_timeout: 2m

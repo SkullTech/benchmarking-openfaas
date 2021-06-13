@@ -32,8 +32,9 @@ microk8s enable openfaas
 echo $(kubectl -n openfaas get secret basic-auth -o jsonpath="{.data.basic-auth-password}" | base64 --decode)
 
 Upgrade:
-helm upgrade openfaas --set async=false openfaas/openfaas -n openfaas --set gateway.replicas=3 --set queueWorker.replicas=1 --set faasnetes.readTimeout=2m --set faasnetes.writeTimeout=2m --set gateway.readTimeout=2m --set gateway.writeTimeout=2m --set gateway.upstreamTimeout=2m
+helm upgrade openfaas openfaas/openfaas -n openfaas --set async=false --set gateway.replicas=3 --set queueWorker.replicas=1 --set faasnetes.readTimeout=2m --set faasnetes.writeTimeout=2m --set gateway.readTimeout=2m --set gateway.writeTimeout=2m --set gateway.upstreamTimeout=2m
 
+arkade install openfaas --load-balancer --gateways 3 --set gateway.directFunctions=false --set async=false --set faasnetes.readTimeout=2m --set faasnetes.writeTimeout=2m --set gateway.readTimeout=2m --set gateway.writeTimeout=2m --set gateway.upstreamTimeout=2m
 
 * Install prom adapter
 
