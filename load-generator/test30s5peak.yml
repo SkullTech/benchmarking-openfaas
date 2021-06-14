@@ -3,26 +3,16 @@ config:
     timeout: 120
 
   phases:
-    - arrivalRate: 1
-      duration: 7.5
-    - arrivalRate: 2
-      duration: 7.5
-    - arrivalRate: 3
-      duration: 7.5
-    - arrivalRate: 4
-      duration: 7.5
-    - arrivalRate: 5
-      duration: 180
-    - arrivalRate: 4
-      duration: 7.5
-    - arrivalRate: 3
-      duration: 7.5
-    - arrivalRate: 2
-      duration: 7.5
-    - arrivalRate: 1
-      duration: 7.5
-    - arrivalRate: 0.1
-      duration: 480
+  - arrivalRate: 0
+    duration: 30
+    rampTo: 5
+  - arrivalRate: 5
+    duration: 180
+  - arrivalRate: 5
+    duration: 30
+    rampTo: 0.1
+  - arrivalRate: 0.1
+    duration: 480
 
   processor: "./metrics.js"
 scenarios:

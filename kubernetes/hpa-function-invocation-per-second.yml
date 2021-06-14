@@ -8,8 +8,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: primality
-  minReplicas: 1
-  maxReplicas: 50
+  minReplicas: 10
+  maxReplicas: 100
   metrics:
   - type: External
     external:

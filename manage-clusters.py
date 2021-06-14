@@ -88,7 +88,7 @@ def create_cluster(
     output = run_command(
         "kubectl get services -n openfaas gateway-external --no-headers",
         capture_output=True,
-        success_condition=lambda x: "none" not in x,
+        success_condition=lambda x: "pending" not in x,
     )
     gateway = f"http://{output.split()[3]}:8080"
     logger.info(f"OpenFaaS gateway is available at: {gateway}")
