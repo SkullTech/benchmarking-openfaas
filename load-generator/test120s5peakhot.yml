@@ -1,0 +1,32 @@
+config:
+  http:
+    timeout: 120
+  phases:
+  - arrivalRate: 0
+    duration: 120
+    rampTo: 5
+  - arrivalRate: 5
+    duration: 180
+  - arrivalRate: 5
+    duration: 120
+    rampTo: 0.1
+  - arrivalRate: 0.1
+    duration: 120
+
+  - arrivalRate: 0
+    duration: 120
+    rampTo: 5
+  - arrivalRate: 5
+    duration: 180
+  - arrivalRate: 5
+    duration: 120
+    rampTo: 0.1
+  - arrivalRate: 0.1
+    duration: 480
+  processor: ./metrics.js
+scenarios:
+- flow:
+  - get:
+      afterResponse: afterResponse
+      beforeRequest: beforeRequest
+      url: /function/primality
