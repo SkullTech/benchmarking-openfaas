@@ -102,7 +102,7 @@ class Bucket:
 								if str(d["hostId"]) == str(host):
 									hdata[host]['y'][e].append(d["containerId"])
 					except Exception as e:
-						print(e)
+						# print(e)
 						continue
 		for host in hdata:
 			yvals = []
@@ -167,7 +167,7 @@ class Bucket:
 					val += time
 					j += 1
 				except Exception as e:
-					print(e)
+					# print(e)
 					continue
 
 			if j==0:
@@ -191,8 +191,11 @@ class Bucket:
 
 		for g in ["executionLatency", "requestResponseLatency", "schedulingLatency"]:
 			print("[*] {}".format(g))
-
-			data = self.get_latency_data(g)
+			try:
+				data = self.get_latency_data(g)
+			except Exception as e:
+				print(e)
+				continue
 			ax[0].plot(data['x'], data['y'], label='{}'.format(g), marker='.')
 
 		ax[0].set_xlabel('Time in seconds (start-time: {})'.format(str(fts(self.request_start_time))))
@@ -276,7 +279,10 @@ class Bucket:
 		fig, ax = plt.subplots(2, 1, figsize=(16,11), gridspec_kw={'height_ratios': [2, 1]})
 
 		print("[*] containers per host")
-		hdata = self.get_heat_data()
+		try:
+			hdata = self.get_heat_data()
+		except:
+			return
 
 		res = [j for i in hdata for j in hdata[i]['y']]
 
@@ -304,7 +310,10 @@ class Bucket:
 		fig, ax = plt.subplots(2, 1, figsize=(16,11), gridspec_kw={'height_ratios': [2, 1]})
 
 		print("[*] requests per container")
-		hdata = self.get_container_heat()
+		try:
+			hdata = self.get_container_heat()
+		except:
+			return
 
 		res = [j for i in hdata for j in hdata[i]['y']]
 
@@ -394,7 +403,10 @@ class Bucket:
 		g = "MemoryUsage"
 		print("[*] {}".format(g))
 
-		nodes = ["n{}MemoryUsage".format(i) for i in range(1, 6)] + ["cpMemoryUsage"]
+		nodes = []
+		for col in self.df.columns:
+			if col.endswith("MemoryUsage"):
+				nodes.append(col)
 
 		for n in nodes:
 			data = self.get_memory_usage(n)
@@ -441,7 +453,7 @@ class Bucket:
 						v = (float(v[:-1])) / 1000000
 					else:
 						v = float(v)
-						print(v)
+						# print(v)
 
 					val += v
 					j += 1
@@ -459,7 +471,11 @@ class Bucket:
 		g = "CpuUsage"
 		print("[*] {}".format(g))
 
-		nodes = ["n{}CpuUsage".format(i) for i in range(1, 6)] + ["cpCpuUsage"]
+		nodes = []
+		for col in self.df.columns:
+			if col.endswith("CpuUsage"):
+				nodes.append(col)
+
 		for n in nodes:
 			data = self.get_cpu_usage(n)
 			if data == {}:
